@@ -305,9 +305,6 @@ AM.downloadAll(function () {
     var powerups = new Powerup_Spawner(gameEngine, AM.getAsset("./img/Powerups.png"));
     var obstacleSpawner = new Obstacle_Spawner(gameEngine, AM.getAsset("./img/obstacles.png"));
     chaser = new OminousFigure(gameEngine, AM.getAsset("./img/coke_sideways_figure.png"));
-    gameEngine.addEntity(new Background4(gameEngine, AM.getAsset("./img/bg6.png")));
-    gameEngine.addEntity(new Background3(gameEngine, AM.getAsset("./img/bg5.png")));
-    gameEngine.addEntity(new Background2(gameEngine, AM.getAsset("./img/bg4.png")));
     gameEngine.addEntity(new Background(gameEngine, AM.getAsset("./img/bg3.png")));
     gameEngine.addEntity(obstacleSpawner);
     gameEngine.obstacles = obstacleSpawner.obstacles;
