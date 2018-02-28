@@ -4,6 +4,7 @@ var gameScore = 0;
 var bound_box = false;
 //var bound_box = true; //To test
 var gameEngine = new GameEngine();
+var asteroids_destroyed = 0;
 
 
 function Animation(spriteSheet, startX, startY, frameWidth, frameHeight, frameDuration, frames, loop, reverse) {
@@ -71,10 +72,12 @@ function Background(game, spritesheet) {
 };
 
 Background.prototype.draw = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
     this.ctx.drawImage(this.spritesheet, this.x, this.y);
 };
 
 Background.prototype.update = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
 }
 
 function BoundingBox(x, y, width, height) {
@@ -102,20 +105,21 @@ function Score(game, score, color, x, y) {
 	this.score = score;
 	this.ctx.font = "15px Arial";
 	this.ctx.fillStyle = color;
-	this.ctx.fillText("SCORE: " + this.score, this.x, this.y);
+	this.ctx.fillText("ASTEROIDS DESTROYED: " + this.score, this.x, this.y);
 	Entity.call(this, game, x, y);
 }
 
 //Score.prototype = new Entity();
 Score.prototype.constructor = Score;
 Score.prototype.update = function() {
-	gameScore += Math.floor(background_speed) * multiplier;
-	this.score = gameScore
-	this.ctx.fillText("SCORE: " + this.score, this.x, this.y);
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	this.score = asteroids_destroyed;
+	this.ctx.fillText("ASTEROIDS DESTROYED: " + this.score, this.x, this.y);
 	//Entity.prototype.update.call(this);
 };
 Score.prototype.draw = function() {
-	this.ctx.fillText("SCORE: " + this.score, this.x, this.y);
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	this.ctx.fillText("ASTEROIDS DESTROYED: " + this.score, this.x, this.y);
 };
 
 function gameOver(game, img, x, y) {
@@ -139,60 +143,133 @@ gameOver.prototype.draw = function(ctx) {
 	if(!this.game.running && this.game.over) { //need variable for when pepsi man is caught
 		ctx.drawImage(this.img, this.x, this.y);
 		ctx.font = "15pt Arial";
-		ctx.fillStyle = "black";
-		ctx.fillText("YOU GOT COKED!", 112, 100);
-		ctx.fillText("Your Score: " + gameScore, 112, 150); //Need to add score variable, need to pass in score parameter?
-		ctx.font = "20pt Arial";
-		ctx.fillText("COKE HAS TAKEN OVER!", 40, 550);
+		ctx.fillStyle = "white";
+		ctx.fillText("Game Over!", 400, 300);
+		ctx.fillText("Asteroids destroyed: " + asteroids_destroyed, 400, 300); //Need to add score variable, need to pass in score parameter?
 	}
 
 }
 
 //original animation spritesheet, 189, 230, 5, 0.10, 14, true,1
-function PepsiMan(game, spritesheet) {
-    this.animation = new Animation(spritesheet, 0, 0, 338, 540, 0.05, 14, true);
-    this.x = 500;
-    this.y = 150;
-    this.speed = 4;
+function Ship(game, spritesheet) {
+    this.animation = new Animation(spritesheet, 0, 0, 720, 713, 1, 1, true);
+    this.speed = 0;
     this.game = game;
     this.ctx = game.ctx;
+    this.live = false;
+    Entity.call(this, game, 410, 260);
 	this.boundingbox = new BoundingBox(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
 }
 
-PepsiMan.prototype.draw = function () {
+Ship.prototype = new Entity();
+Ship.prototype.constructor = Ship;
+
+Ship.prototype.draw = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if (bound_box) {
 //      this.ctx.strokeStyle = "red";
 //      this.ctx.strokeRect(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
       this.ctx.strokeStyle = "yellow";
       this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
   }
-	this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.2);
+	this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.15);
+	Entity.prototype.draw.call(this);
 }
 
-PepsiMan.prototype.update = function () {
+Ship.prototype.update = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
 //    gameEngine.addEntity(new Bullet(gameEngine, AM.getAsset("./img/pep16v2.png"), this));
-    for (var i = 0; i < this.game.asteroids.length; i++) {
-    	var ob = this.game.asteroids[i];
-    	if(ob instanceof Meteor && this.boundingbox.collide(ob.boundingbox) && ob.live) {
-    		this.y += this.game.clockTick * ob.speed;
-    		this.stuck = true;
-    		this.spike = ob;
-		}
-    }
+//    for (var i = 0; i < this.game.asteroids.length; i++) {
+//    	var ob = this.game.asteroids[i];
+//    	if(ob instanceof Meteor && this.boundingbox.collide(ob.boundingbox) && ob.live) {
+//    		this.y += this.game.clockTick * ob.speed;
+//    		this.stuck = true;
+//    		this.spike = ob;
+//		}
+//    }
+	this.boundingbox = new BoundingBox(this.x + 5, this.y + 4, this.animation.frameWidth - 617, this.animation.frameHeight - 620);
+	Entity.prototype.update.call(this);
+	if (!this.live) {
+		this.game.over = true;
+		this.game.running = false;
+		this.game.noSG = true;
+	}
 }
+
+function Meteor_Slow (game, spritesheet, lane) {
+	this.animation = new Animation(spritesheet, 0, 990, 320, 185, .03, 14, true, false);
+	this.speed = 50;
+	this.ctx = game.ctx;
+	this.live = true;
+    Entity.call(this, game, 80, -200);
+	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+};
+
+Meteor_Slow.prototype = new Entity();
+Meteor_Slow.prototype.constructor = Meteor_Slow;
+
+Meteor_Slow.prototype.update = function() {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	this.y += this.game.clockTick * this.speed;
+	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+	Entity.prototype.update.call(this);
+};
+
+Meteor_Slow.prototype.draw = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	if (bound_box) {
+//      this.ctx.strokeStyle = "red";
+//      this.ctx.strokeRect(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
+      this.ctx.strokeStyle = "yellow";
+      this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
+  }
+	if(this.live){
+		this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.2);//0.4
+	    Entity.prototype.draw.call(this);
+	}
+
+};
+
+function Meteor_Fast (game, spritesheet, lane) {
+	this.animation = new Animation(spritesheet, 0, 990, 320, 185, .03, 14, true, false);
+	this.speed = 180;
+	this.ctx = game.ctx;
+	this.live = true;
+    Entity.call(this, game, 80, -200);
+	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+};
+
+Meteor_Fast.prototype = new Entity();
+Meteor_Fast.prototype.constructor = Meteor_Fast;
+
+Meteor_Fast.prototype.update = function() {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	this.y += this.game.clockTick * this.speed;
+	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+	Entity.prototype.update.call(this);
+};
+
+Meteor_Fast.prototype.draw = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	if (bound_box) {
+//      this.ctx.strokeStyle = "red";
+//      this.ctx.strokeRect(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
+      this.ctx.strokeStyle = "yellow";
+      this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
+  }
+	if(this.live){
+		this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.2);//0.4
+	    Entity.prototype.draw.call(this);
+	}
+
+};
 
 function Meteor (game, spritesheet, lane) {
 	this.animation = new Animation(spritesheet, 0, 990, 320, 185, .03, 14, true, false);
-	this.speed = 120;
+	this.speed = 100;
 	this.ctx = game.ctx;
 	this.live = true;
-	if (lane === left_lane) {
-    	Entity.call(this, game, 80, -200);
-    } else if (lane === middle_lane) {
-    	Entity.call(this, game, 170, -200);
-    } else {
-    	Entity.call(this, game, 257, -200);
-    }
+    Entity.call(this, game, 80, -200);
 	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
 };
 
@@ -200,13 +277,14 @@ Meteor.prototype = new Entity();
 Meteor.prototype.constructor = Meteor;
 
 Meteor.prototype.update = function() {
-	this.speed =  115 * background_speed;
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	this.y += this.game.clockTick * this.speed;
 	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
 	Entity.prototype.update.call(this);
 };
 
 Meteor.prototype.draw = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if (bound_box) {
 //      this.ctx.strokeStyle = "red";
 //      this.ctx.strokeRect(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
@@ -232,7 +310,8 @@ Asteroid_Spawner.prototype = new Entity();
 Asteroid_Spawner.prototype.constructor = Asteroid_Spawner;
 
 Asteroid_Spawner.prototype.update = function () {
-	this.asteroids.push(new Meteor(this.game, this.spritesheet, current_lane));
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	this.asteroids.push(new Meteor_Slow(this.game, this.spritesheet));
 	var numAsteroid = this.asteroids.length;
 	for(i = 0; i < numAsteroid; i++) {
 		this.asteroids[i].update();
@@ -241,6 +320,7 @@ Asteroid_Spawner.prototype.update = function () {
 };
 
 Asteroid_Spawner.prototype.draw = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	var numAsteroid = this.asteroids.length;
 	for(i = 0; i < numAsteroid; i++) {
 		this.asteroids[i].draw();
@@ -260,6 +340,7 @@ function Bullet(game, spritesheet, ship) {
 }
 
 Bullet.prototype.draw = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if (bound_box) {
       this.ctx.strokeStyle = "yellow";
       this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
@@ -270,6 +351,7 @@ Bullet.prototype.draw = function () {
 }
 
 Bullet.prototype.update = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	this.boundingbox = new BoundingBox(this.x, this.y + 4, this.animation.frameWidth - 130, this.animation.frameHeight - 80);
 	for (var i = 0; i < this.game.asteroid.length; i++) {
 		var ob = this.game.asteroid[i];
@@ -280,7 +362,11 @@ Bullet.prototype.update = function () {
 	}
 }
 
-AM.queueDownload("./img/bg3.png");
+AM.queueDownload("./img/background.jpg");
+AM.queueDownload("./img/gameover.jpg");
+AM.queueDownload("./img/bullet.png");
+AM.queueDownload("./img/spaceship.png");
+AM.queueDownload("./img/meteors.png");
 
 
 AM.downloadAll(function () {
@@ -292,29 +378,18 @@ AM.downloadAll(function () {
     gameEngine.running = false;
     gameEngine.over = false;
     gameEngine.noSG = false;
-    var SG = new startScreen(gameEngine, AM.getAsset("./img/newpepsi.jpg"), 0, 0);
-    gameEngine.addEntity(SG);
-    console.log(SG);
-
-    var GO = new gameOver(gameEngine, AM.getAsset("./img/newcoke.jpg"), 0, 0);
+    var GO = new gameOver(gameEngine, AM.getAsset("./img/gameover.jpg"), 0, 0);
     gameEngine.addEntity(GO);
     console.log(GO);
 
     gameEngine.init(ctx);
     gameEngine.start();
-    var powerups = new Powerup_Spawner(gameEngine, AM.getAsset("./img/Powerups.png"));
-    var obstacleSpawner = new Obstacle_Spawner(gameEngine, AM.getAsset("./img/obstacles.png"));
-    chaser = new OminousFigure(gameEngine, AM.getAsset("./img/coke_sideways_figure.png"));
-    gameEngine.addEntity(new Background(gameEngine, AM.getAsset("./img/bg3.png")));
-    gameEngine.addEntity(obstacleSpawner);
-    gameEngine.obstacles = obstacleSpawner.obstacles;
-    gameEngine.addEntity(powerups);
-    gameEngine.powerups = powerups.powerups;
-    gameEngine.addEntity(new PepsiMan(gameEngine, AM.getAsset("./img/theboy.png")));
-    gameEngine.addEntity(chaser);
-    //gameEngine.addEntity(new Bullet(gameEngine, AM.getAsset("./img/pep16v2.png")));
-    gameEngine.addEntity(new Score(gameEngine, gameScore, "yellow", 280, 480));
-    gameEngine.addEntity(new LevelDisplay(gameEngine, "yellow", 170, 200));
+    var asteroidSpawner = new Asteroid_Spawner(gameEngine, AM.getAsset("./img/meteors.png"));
+    gameEngine.addEntity(new Background(gameEngine, AM.getAsset("./img/background.jpg")));
+    gameEngine.addEntity(asteroidSpawner);
+    gameEngine.asteroids = asteroidSpawner.asteroids;
+    gameEngine.addEntity(new Ship(gameEngine, AM.getAsset("./img/spaceship.png")));
+    gameEngine.addEntity(new Score(gameEngine, asteroids_destroyed, "white", 750, 640));
 
     console.log("All Done!");
 });
