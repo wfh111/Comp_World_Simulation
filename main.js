@@ -146,9 +146,9 @@ gameOver.prototype.draw = function(ctx) {
 		console.log("Inside gameover");
 		ctx.drawImage(this.img, this.x, this.y);
 		ctx.font = "15pt Arial";
-		ctx.fillStyle = "white";
-		ctx.fillText("Game Over!", 390, 300);
-		ctx.fillText("Asteroids destroyed: " + asteroids_destroyed, 390, 330); //Need to add score variable, need to pass in score parameter?
+		ctx.fillStyle = "black";
+		ctx.fillText("Game Over!", 390, 420);
+		ctx.fillText("Asteroids destroyed: " + asteroids_destroyed, 390, 450); //Need to add score variable, need to pass in score parameter?
 	}
 
 }
@@ -213,7 +213,7 @@ function Meteor_Slow (game, spritesheet, pos) {
 	}else if(pos === 2) {
 		Entity.call(this, game, 1000, 290);
 	}else if(pos === 3) {
-		Entity.call(this, game, 420, 800);
+		Entity.call(this, game, 420, 1020);
 	}
 	this.boundingbox = new BoundingBox(this.x + 10, this.y + 2, this.animation.frameWidth - 420, this.animation.frameHeight - 250);
 };
@@ -268,7 +268,7 @@ function Meteor_Fast (game, spritesheet, pos) {
 	}else if(pos === 2) {
 		Entity.call(this, game, 1000, 290);
 	}else if(pos === 3) {
-		Entity.call(this, game, 440, 800);
+		Entity.call(this, game, 440, 1020);
 	}
 	this.boundingbox = new BoundingBox(this.x + 4, this.y + 10, this.animation.frameWidth - 900, this.animation.frameHeight - 375);
 };
@@ -323,7 +323,7 @@ function Meteor (game, spritesheet, pos) {
 	}else if(pos === 2) {
 		Entity.call(this, game, 1000, 300);
 	}else if(pos === 3) {
-		Entity.call(this, game, 450, 800);
+		Entity.call(this, game, 450, 1020);
 	}
 	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth, this.animation.frameHeight);
 };
@@ -446,7 +446,7 @@ Bullet.prototype.update = function () {
 }
 
 AM.queueDownload("./img/background.jpg");
-AM.queueDownload("./img/gameover.jpg");
+AM.queueDownload("./img/gameover.png");
 AM.queueDownload("./img/bullet.png");
 AM.queueDownload("./img/spaceship.png");
 AM.queueDownload("./img/meteors.png");
@@ -461,7 +461,7 @@ AM.downloadAll(function () {
     gameEngine.running = true;
     gameEngine.over = false;
     gameEngine.noSG = false;
-    var GO = new gameOver(gameEngine, AM.getAsset("./img/gameover.jpg"), 0, 0);
+    var GO = new gameOver(gameEngine, AM.getAsset("./img/gameover.png"), 0, 0);
     gameEngine.addEntity(GO);
     console.log(GO);
 
@@ -472,7 +472,7 @@ AM.downloadAll(function () {
     gameEngine.addEntity(asteroidSpawner);
     gameEngine.asteroids = asteroidSpawner.asteroids;
     gameEngine.addEntity(new Ship(gameEngine, AM.getAsset("./img/spaceship.png")));
-    gameEngine.addEntity(new Score(gameEngine, asteroids_destroyed, "white", 750, 640));
+    gameEngine.addEntity(new Score(gameEngine, asteroids_destroyed, "white", 750, 950));
 
     console.log("All Done!");
 });
