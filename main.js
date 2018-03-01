@@ -254,19 +254,22 @@ Meteor_Slow.prototype.draw = function () {
 };
 
 function Meteor_Fast (game, spritesheet, pos) {
-	this.animation = new Animation(spritesheet, 0, 0, 970, 400, 1, 1, true, false);
 	this.speed = 180;
 	this.ctx = game.ctx;
 	this.live = true;
 	this.hp = 1;
 	this.pos = pos;
 	if (pos === 0) {
+		this.animation = new Animation(spritesheet, 0, 2050, 970, 400, 1, 1, true, false);
 		Entity.call(this, game, -200, 440);
 	} else if(pos === 1) {
+		this.animation = new Animation(spritesheet, 0, 2500, 400, 970, 1, 1, true, false);
 		Entity.call(this, game, 440, -200);
 	}else if(pos === 2) {
+		this.animation = new Animation(spritesheet, 0, 0, 970, 400, 1, 1, true, false);
 		Entity.call(this, game, 1000, 440);
 	}else if(pos === 3) {
+		this.animation = new Animation(spritesheet, 30, 1000, 400, 970, 1, 1, true, false);
 		Entity.call(this, game, 440, 1020);
 	}
 	this.boundingbox = new BoundingBox(this.x + 4, this.y + 10, this.animation.frameWidth - 900, this.animation.frameHeight - 375);
@@ -279,14 +282,17 @@ Meteor_Fast.prototype.update = function() {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if(this.pos === 0) {
 		this.x += this.game.clockTick * this.speed;
+		this.boundingbox = new BoundingBox(this.x + 20, this.y + 10, this.animation.frameWidth - 900, this.animation.frameHeight - 375);
 	} else if(this.pos === 1) {
 		this.y += this.game.clockTick * this.speed;
+		this.boundingbox = new BoundingBox(this.x + 10, this.y + 20, this.animation.frameWidth - 375, this.animation.frameHeight - 900);
 	} else if(this.pos === 2) {
 		this.x -= this.game.clockTick * this.speed;
+		this.boundingbox = new BoundingBox(this.x + 4, this.y + 15, this.animation.frameWidth - 900, this.animation.frameHeight - 375);
 	} else if(this.pos === 3) {
 		this.y -= this.game.clockTick * this.speed;
+		this.boundingbox = new BoundingBox(this.x + 10, this.y + 10, this.animation.frameWidth - 375, this.animation.frameHeight - 900);
 	}
-	this.boundingbox = new BoundingBox(this.x + 4, this.y + 10, this.animation.frameWidth - 900, this.animation.frameHeight - 375);
 	if(this.hp === 0) {
 		this.live = false;
 	}
@@ -309,7 +315,7 @@ Meteor_Fast.prototype.draw = function () {
 };
 
 function Meteor (game, spritesheet, pos) {
-	this.animation = new Animation(spritesheet, 0, 850, 130, 185, .1, 4, true, false);
+	this.animation = new Animation(spritesheet, 0, 855, 130, 185, .1, 4, true, false);
 	this.speed = 100;
 	this.ctx = game.ctx;
 	this.live = true;
@@ -377,8 +383,8 @@ Asteroid_Spawner.prototype.update = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if(this.counter % 100 === 0){
 		var type = Math.floor(Math.random() * 100) + 1;
-		  type %= 10;
-//		  type = 2; //Testing individual obstacles
+//		  type %= 10;
+		  type = 9; //Testing individual obstacles
 		  var pos = Math.floor(Math.random() * 100) + 1;
 		  pos %= 4;
 //		  pos = 3; //Testing position
