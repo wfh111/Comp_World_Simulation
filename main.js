@@ -160,7 +160,7 @@ function Ship(game, spritesheet) {
     this.game = game;
     this.ctx = game.ctx;
     this.live = true;
-    Entity.call(this, game, 410, 260);
+    Entity.call(this, game, 410, 410);
 	this.boundingbox = new BoundingBox(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
 }
 
@@ -192,7 +192,6 @@ Ship.prototype.update = function () {
 //    }
 	this.boundingbox = new BoundingBox(this.x + 5, this.y + 4, this.animation.frameWidth - 617, this.animation.frameHeight - 620);
 	if (!this.live) {
-		console.log("inside ship dead");
 		this.game.over = true;
 		this.game.noSG = true;
 	}
@@ -207,11 +206,11 @@ function Meteor_Slow (game, spritesheet, pos) {
 	this.hp = 3;
 	this.pos = pos;
 	if (pos === 0) {
-		Entity.call(this, game, -200, 290);
+		Entity.call(this, game, -200, 440);
 	} else if(pos === 1) {
 		Entity.call(this, game, 420, -200);
 	}else if(pos === 2) {
-		Entity.call(this, game, 1000, 290);
+		Entity.call(this, game, 1000, 440);
 	}else if(pos === 3) {
 		Entity.call(this, game, 420, 1020);
 	}
@@ -262,11 +261,11 @@ function Meteor_Fast (game, spritesheet, pos) {
 	this.hp = 1;
 	this.pos = pos;
 	if (pos === 0) {
-		Entity.call(this, game, -200, 290);
+		Entity.call(this, game, -200, 440);
 	} else if(pos === 1) {
 		Entity.call(this, game, 440, -200);
 	}else if(pos === 2) {
-		Entity.call(this, game, 1000, 290);
+		Entity.call(this, game, 1000, 440);
 	}else if(pos === 3) {
 		Entity.call(this, game, 440, 1020);
 	}
@@ -317,11 +316,11 @@ function Meteor (game, spritesheet, pos) {
 	this.hp = 1;
 	this.pos = pos;
 	if (pos === 0) {
-		Entity.call(this, game, -200, 300);
+		Entity.call(this, game, -200, 450);
 	} else if(pos === 1) {
 		Entity.call(this, game, 450, -200);
 	}else if(pos === 2) {
-		Entity.call(this, game, 1000, 300);
+		Entity.call(this, game, 1000, 450);
 	}else if(pos === 3) {
 		Entity.call(this, game, 450, 1020);
 	}
@@ -378,21 +377,28 @@ Asteroid_Spawner.prototype.update = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if(this.counter % 100 === 0){
 		var type = Math.floor(Math.random() * 100) + 1;
-//		  type %= 3;
-		  type = 2; //Testing individual obstacles
+		  type %= 10;
+//		  type = 2; //Testing individual obstacles
 		  var pos = Math.floor(Math.random() * 100) + 1;
-//		  pos %= 4;
-		  pos = 3; //Testing position
-		  switch(type) {
-		  case 0: //Meteor
-		  		this.asteroids.push(new Meteor(this.game, this.spritesheet, pos));
-		  		break;
-		  case 1: //Meteor_Slow
-		      	this.asteroids.push(new Meteor_Slow(this.game, this.spritesheet, pos));
-		      	break;
-		  case 2: //Meteor_Fast
-			  	this.asteroids.push(new Meteor_Fast(this.game, this.spritesheet, pos));
-			  	break;
+		  pos %= 4;
+//		  pos = 3; //Testing position
+//		  switch(type) {
+//		  case 0: //Meteor
+//		  		this.asteroids.push(new Meteor(this.game, this.spritesheet, pos));
+//		  		break;
+//		  case 1: //Meteor_Slow
+//		      	this.asteroids.push(new Meteor_Slow(this.game, this.spritesheet, pos));
+//		      	break;
+//		  case 2: //Meteor_Fast
+//			  	this.asteroids.push(new Meteor_Fast(this.game, this.spritesheet, pos));
+//			  	break;
+//		  }
+		  if(type < 8) {
+			  this.asteroids.push(new Meteor(this.game, this.spritesheet, pos));
+		  } else if(type >= 8 && type < 9) {
+		      this.asteroids.push(new Meteor_Slow(this.game, this.spritesheet, pos));
+		  } else if(type === 9) {
+		  		this.asteroids.push(new Meteor_Fast(this.game, this.spritesheet, pos));
 		  }
 	}
 	var numAsteroid = this.asteroids.length;
