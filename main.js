@@ -2,7 +2,7 @@ var AM = new AssetManager();
 var sheetHeight = 600;
 var gameScore = 0;
 var bound_box = false;
-//var bound_box = true; //To test
+var bound_box = true; //To test
 var gameEngine = new GameEngine();
 var asteroids_destroyed = 0;
 
@@ -77,7 +77,7 @@ Background.prototype.draw = function () {
 };
 
 Background.prototype.update = function () {
-	if(!this.game.running || (!this.game.running && this.game.over)) return;
+//	if(!this.game.running || (!this.game.running && this.game.over)) return;
 }
 
 function BoundingBox(x, y, width, height) {
@@ -133,7 +133,9 @@ gameOver.prototype = new Entity();
 gameOver.prototype.constructor = gameOver;
 
 gameOver.prototype.update = function() {
+	if(!this.game.running && !this.game.noSG) return;
 	if (this.game.running && this.game.over) {
+		console.log("in game over update");
 		this.game.running = false;
 	}
 }
@@ -141,11 +143,12 @@ gameOver.prototype.update = function() {
 gameOver.prototype.draw = function(ctx) {
 	if(!this.game.running && !this.game.noSG) return;
 	if(!this.game.running && this.game.over) { //need variable for when pepsi man is caught
+		console.log("Inside gameover");
 		ctx.drawImage(this.img, this.x, this.y);
 		ctx.font = "15pt Arial";
 		ctx.fillStyle = "white";
-		ctx.fillText("Game Over!", 400, 300);
-		ctx.fillText("Asteroids destroyed: " + asteroids_destroyed, 400, 300); //Need to add score variable, need to pass in score parameter?
+		ctx.fillText("Game Over!", 390, 300);
+		ctx.fillText("Asteroids destroyed: " + asteroids_destroyed, 390, 330); //Need to add score variable, need to pass in score parameter?
 	}
 
 }
@@ -156,7 +159,7 @@ function Ship(game, spritesheet) {
     this.speed = 0;
     this.game = game;
     this.ctx = game.ctx;
-    this.live = false;
+    this.live = true;
     Entity.call(this, game, 410, 260);
 	this.boundingbox = new BoundingBox(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
 }
@@ -188,21 +191,31 @@ Ship.prototype.update = function () {
 //		}
 //    }
 	this.boundingbox = new BoundingBox(this.x + 5, this.y + 4, this.animation.frameWidth - 617, this.animation.frameHeight - 620);
-	Entity.prototype.update.call(this);
 	if (!this.live) {
+		console.log("inside ship dead");
 		this.game.over = true;
-		this.game.running = false;
 		this.game.noSG = true;
 	}
+	Entity.prototype.update.call(this);
 }
 
-function Meteor_Slow (game, spritesheet, lane) {
-	this.animation = new Animation(spritesheet, 0, 990, 320, 185, .03, 14, true, false);
+function Meteor_Slow (game, spritesheet, pos) {
+	this.animation = new Animation(spritesheet, 0, 540, 480, 300, 1, 1, true, false);
 	this.speed = 50;
 	this.ctx = game.ctx;
 	this.live = true;
-    Entity.call(this, game, 80, -200);
-	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+	this.hp = 3;
+	this.pos = pos;
+	if (pos === 0) {
+		Entity.call(this, game, -200, 290);
+	} else if(pos === 1) {
+		Entity.call(this, game, 420, -200);
+	}else if(pos === 2) {
+		Entity.call(this, game, 1000, 290);
+	}else if(pos === 3) {
+		Entity.call(this, game, 420, 800);
+	}
+	this.boundingbox = new BoundingBox(this.x + 10, this.y + 2, this.animation.frameWidth - 420, this.animation.frameHeight - 250);
 };
 
 Meteor_Slow.prototype = new Entity();
@@ -210,8 +223,19 @@ Meteor_Slow.prototype.constructor = Meteor_Slow;
 
 Meteor_Slow.prototype.update = function() {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
-	this.y += this.game.clockTick * this.speed;
-	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+	if(this.pos === 0) {
+		this.x += this.game.clockTick * this.speed;
+	} else if(this.pos === 1) {
+		this.y += this.game.clockTick * this.speed;
+	} else if(this.pos === 2) {
+		this.x -= this.game.clockTick * this.speed;
+	} else if(this.pos === 3) {
+		this.y -= this.game.clockTick * this.speed;
+	}
+	this.boundingbox = new BoundingBox(this.x + 10, this.y + 2, this.animation.frameWidth - 420, this.animation.frameHeight - 250);
+	if(this.hp === 0) {
+		this.live = false;
+	}
 	Entity.prototype.update.call(this);
 };
 
@@ -224,19 +248,29 @@ Meteor_Slow.prototype.draw = function () {
       this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
   }
 	if(this.live){
-		this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.2);//0.4
+		this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.18);//0.4
 	    Entity.prototype.draw.call(this);
 	}
 
 };
 
-function Meteor_Fast (game, spritesheet, lane) {
-	this.animation = new Animation(spritesheet, 0, 990, 320, 185, .03, 14, true, false);
+function Meteor_Fast (game, spritesheet, pos) {
+	this.animation = new Animation(spritesheet, 0, 0, 970, 400, 1, 1, true, false);
 	this.speed = 180;
 	this.ctx = game.ctx;
 	this.live = true;
-    Entity.call(this, game, 80, -200);
-	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+	this.hp = 1;
+	this.pos = pos;
+	if (pos === 0) {
+		Entity.call(this, game, -200, 290);
+	} else if(pos === 1) {
+		Entity.call(this, game, 440, -200);
+	}else if(pos === 2) {
+		Entity.call(this, game, 1000, 290);
+	}else if(pos === 3) {
+		Entity.call(this, game, 440, 800);
+	}
+	this.boundingbox = new BoundingBox(this.x + 4, this.y + 10, this.animation.frameWidth - 900, this.animation.frameHeight - 375);
 };
 
 Meteor_Fast.prototype = new Entity();
@@ -244,8 +278,19 @@ Meteor_Fast.prototype.constructor = Meteor_Fast;
 
 Meteor_Fast.prototype.update = function() {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
-	this.y += this.game.clockTick * this.speed;
-	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+	if(this.pos === 0) {
+		this.x += this.game.clockTick * this.speed;
+	} else if(this.pos === 1) {
+		this.y += this.game.clockTick * this.speed;
+	} else if(this.pos === 2) {
+		this.x -= this.game.clockTick * this.speed;
+	} else if(this.pos === 3) {
+		this.y -= this.game.clockTick * this.speed;
+	}
+	this.boundingbox = new BoundingBox(this.x + 4, this.y + 10, this.animation.frameWidth - 900, this.animation.frameHeight - 375);
+	if(this.hp === 0) {
+		this.live = false;
+	}
 	Entity.prototype.update.call(this);
 };
 
@@ -258,19 +303,29 @@ Meteor_Fast.prototype.draw = function () {
       this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
   }
 	if(this.live){
-		this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.2);//0.4
+		this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.1);//0.4
 	    Entity.prototype.draw.call(this);
 	}
 
 };
 
-function Meteor (game, spritesheet, lane) {
-	this.animation = new Animation(spritesheet, 0, 990, 320, 185, .03, 14, true, false);
+function Meteor (game, spritesheet, pos) {
+	this.animation = new Animation(spritesheet, 0, 850, 130, 185, .1, 4, true, false);
 	this.speed = 100;
 	this.ctx = game.ctx;
 	this.live = true;
-    Entity.call(this, game, 80, -200);
-	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+	this.hp = 1;
+	this.pos = pos;
+	if (pos === 0) {
+		Entity.call(this, game, -200, 300);
+	} else if(pos === 1) {
+		Entity.call(this, game, 450, -200);
+	}else if(pos === 2) {
+		Entity.call(this, game, 1000, 300);
+	}else if(pos === 3) {
+		Entity.call(this, game, 450, 800);
+	}
+	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth, this.animation.frameHeight);
 };
 
 Meteor.prototype = new Entity();
@@ -278,8 +333,19 @@ Meteor.prototype.constructor = Meteor;
 
 Meteor.prototype.update = function() {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
-	this.y += this.game.clockTick * this.speed;
-	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth - 255, this.animation.frameHeight - 148);
+	if(this.pos === 0) {
+		this.x += this.game.clockTick * this.speed;
+	} else if(this.pos === 1) {
+		this.y += this.game.clockTick * this.speed;
+	} else if(this.pos === 2) {
+		this.x -= this.game.clockTick * this.speed;
+	} else if(this.pos === 3) {
+		this.y -= this.game.clockTick * this.speed;
+	}
+	this.boundingbox = new BoundingBox(this.x + 3, this.y + 10, this.animation.frameWidth - 110, this.animation.frameHeight - 170);
+	if(this.hp === 0) {
+		this.live = false;
+	}
 	Entity.prototype.update.call(this);
 };
 
@@ -303,7 +369,6 @@ function Asteroid_Spawner(game, spritesheet) {
 	this.game = game;
 	this.spritesheet = spritesheet;
 	this.counter = 0;
-	this.previous = -1;
 };
 
 Asteroid_Spawner.prototype = new Entity();
@@ -311,7 +376,25 @@ Asteroid_Spawner.prototype.constructor = Asteroid_Spawner;
 
 Asteroid_Spawner.prototype.update = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
-	this.asteroids.push(new Meteor_Slow(this.game, this.spritesheet));
+	if(this.counter % 100 === 0){
+		var type = Math.floor(Math.random() * 100) + 1;
+//		  type %= 3;
+		  type = 2; //Testing individual obstacles
+		  var pos = Math.floor(Math.random() * 100) + 1;
+//		  pos %= 4;
+		  pos = 3; //Testing position
+		  switch(type) {
+		  case 0: //Meteor
+		  		this.asteroids.push(new Meteor(this.game, this.spritesheet, pos));
+		  		break;
+		  case 1: //Meteor_Slow
+		      	this.asteroids.push(new Meteor_Slow(this.game, this.spritesheet, pos));
+		      	break;
+		  case 2: //Meteor_Fast
+			  	this.asteroids.push(new Meteor_Fast(this.game, this.spritesheet, pos));
+			  	break;
+		  }
+	}
 	var numAsteroid = this.asteroids.length;
 	for(i = 0; i < numAsteroid; i++) {
 		this.asteroids[i].update();
@@ -355,9 +438,9 @@ Bullet.prototype.update = function () {
 	this.boundingbox = new BoundingBox(this.x, this.y + 4, this.animation.frameWidth - 130, this.animation.frameHeight - 80);
 	for (var i = 0; i < this.game.asteroid.length; i++) {
 		var ob = this.game.asteroid[i];
-		if(ob instanceof Meteor && this.boundingbox.collide(ob.boundingbox) && this.live && ob.live) {
+		if(this.boundingbox.collide(ob.boundingbox) && this.live && ob.live) {
 			this.live = false;
-			ob.live = false;
+			ob.hp -= 1;
 		}
 	}
 }
@@ -375,7 +458,7 @@ AM.downloadAll(function () {
 //    var gameEngine = new GameEngine();
 
 
-    gameEngine.running = false;
+    gameEngine.running = true;
     gameEngine.over = false;
     gameEngine.noSG = false;
     var GO = new gameOver(gameEngine, AM.getAsset("./img/gameover.jpg"), 0, 0);
