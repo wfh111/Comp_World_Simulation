@@ -407,10 +407,10 @@ Asteroid_Spawner.prototype.constructor = Asteroid_Spawner;
 
 Asteroid_Spawner.prototype.update = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
-	if(this.counter >= 60){
+	if(this.counter >= 80){
 		this.counter = 0;
 		var type = Math.floor(Math.random() * 100) + 1;
-		  type %= 10;
+		  type %= 40;
 //		  type = 8; //Testing individual obstacles
 		  var pos = Math.floor(Math.random() * 100) + 1;
 		  pos %= 4;
@@ -420,11 +420,11 @@ Asteroid_Spawner.prototype.update = function () {
 			  pos %= 4;
 		  }
 		  this.previous = pos;
-		  if(type < 8) {
+		  if(type < 28) {
 			  this.asteroids.push(new Meteor(this.game, this.spritesheet, pos));
-		  } else if(type >= 8 && type < 9) {
+		  } else if(type >= 35) {
 		      this.asteroids.push(new Meteor_Slow(this.game, this.spritesheet, pos));
-		  } else if(type === 9) {
+		  } else if(type >= 28 && type < 35) {
 		  		this.asteroids.push(new Meteor_Fast(this.game, this.spritesheet, pos));
 		  }
 	}
