@@ -2,9 +2,12 @@ var AM = new AssetManager();
 var sheetHeight = 600;
 var gameScore = 0;
 var bound_box = false;
-var bound_box = true; //To test
+//var bound_box = true; //To test
 var gameEngine = new GameEngine();
 var asteroids_destroyed = 0;
+var currentClosestDist = 1000;
+var currentAsteroid = null;
+var currentClosestPos = 2;
 
 
 function Animation(spriteSheet, startX, startY, frameWidth, frameHeight, frameDuration, frames, loop, reverse) {
@@ -155,11 +158,12 @@ gameOver.prototype.draw = function(ctx) {
 
 //original animation spritesheet, 189, 230, 5, 0.10, 14, true,1
 function Ship(game, spritesheet) {
-    this.animation = new Animation(spritesheet, 0, 0, 720, 713, 1, 1, true);
+    this.animation = new Animation(spritesheet, 0, 0, 398, 250, .08, 19, true);
     this.speed = 0;
     this.game = game;
     this.ctx = game.ctx;
     this.live = true;
+    this.counter = 0;
     Entity.call(this, game, 410, 410);
 	this.boundingbox = new BoundingBox(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
 }
@@ -170,49 +174,73 @@ Ship.prototype.constructor = Ship;
 Ship.prototype.draw = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if (bound_box) {
-//      this.ctx.strokeStyle = "red";
-//      this.ctx.strokeRect(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
       this.ctx.strokeStyle = "yellow";
       this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
   }
-	this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.15);
+	this.animation.drawFrame(this.game.clockTick, this.ctx, this.x, this.y, 0.3);
 	Entity.prototype.draw.call(this);
 }
 
 Ship.prototype.update = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
-//    gameEngine.addEntity(new Bullet(gameEngine, AM.getAsset("./img/pep16v2.png"), this));
-//    for (var i = 0; i < this.game.asteroids.length; i++) {
-//    	var ob = this.game.asteroids[i];
-//    	if(ob instanceof Meteor && this.boundingbox.collide(ob.boundingbox) && ob.live) {
-//    		this.y += this.game.clockTick * ob.speed;
-//    		this.stuck = true;
-//    		this.spike = ob;
-//		}
-//    }
-	this.boundingbox = new BoundingBox(this.x + 5, this.y + 4, this.animation.frameWidth - 617, this.animation.frameHeight - 620);
+	if(currentAsteroid != null && !currentAsteroid.live) {
+		currentClosestDist = 1000;
+	}
+    for (var i = 0; i < this.game.asteroids.length; i++) {
+    	var ob = this.game.asteroids[i];
+    	if((ob instanceof Meteor || ob instanceof Meteor_Fast || ob instanceof Meteor_Slow) && this.boundingbox.collide(ob.boundingbox) && ob.live) {
+    		this.live = false;
+		}
+    	if(ob.live) {
+    		if((this.boundingbox.left - ob.boundingbox.right) < currentClosestDist && ob.pos === 0) {
+    			currentClosestDist = this.boundingbox.left - ob.boundingbox.right;
+    			currentAsteroid = ob;
+        		currentClosestPos = ob.pos;
+    		} 
+    		if((this.boundingbox.top - ob.boundingbox.bottom) < currentClosestDist && ob.pos === 1) {
+    			currentClosestDist = this.boundingbox.top - ob.boundingbox.bottom;
+    			currentAsteroid = ob;
+        		currentClosestPos = ob.pos;
+    		} 
+    		if((ob.boundingbox.left - this.boundingbox.right) < currentClosestDist && ob.pos === 2) {
+    			currentClosestDist = ob.boundingbox.left - this.boundingbox.right;
+    			currentAsteroid = ob;
+        		currentClosestPos = ob.pos;
+    		} 
+    		if((ob.boundingbox.top - this.boundingbox.bottom) < currentClosestDist && ob.pos === 3) {
+    			currentClosestDist = ob.boundingbox.top - this.boundingbox.bottom;
+    			currentAsteroid = ob;
+        		currentClosestPos = ob.pos;
+    		}
+    	}
+    }
+	if(this.counter % 60 === 0) {
+		 gameEngine.addEntity(new Bullet(gameEngine, AM.getAsset("./img/bullet.png")));
+	}
+	this.boundingbox = new BoundingBox(this.x + 15, this.y + 15, this.animation.frameWidth - 315, this.animation.frameHeight - 215);
 	if (!this.live) {
 		this.game.over = true;
 		this.game.noSG = true;
 	}
 	Entity.prototype.update.call(this);
+	this.counter += 1;
 }
 
 function Meteor_Slow (game, spritesheet, pos) {
-	this.animation = new Animation(spritesheet, 0, 540, 480, 300, 1, 1, true, false);
+	this.animation = new Animation(spritesheet, 0, 540, 480, 320, 1, 1, true, false);
 	this.speed = 50;
 	this.ctx = game.ctx;
 	this.live = true;
 	this.hp = 3;
 	this.pos = pos;
 	if (pos === 0) {
-		Entity.call(this, game, -200, 440);
+		Entity.call(this, game, -200, 410);
 	} else if(pos === 1) {
-		Entity.call(this, game, 420, -200);
+		Entity.call(this, game, 425, -200);
 	}else if(pos === 2) {
-		Entity.call(this, game, 1000, 440);
+		Entity.call(this, game, 1000, 410);
 	}else if(pos === 3) {
-		Entity.call(this, game, 420, 1020);
+		Entity.call(this, game, 425, 1020);
 	}
 	this.boundingbox = new BoundingBox(this.x + 10, this.y + 2, this.animation.frameWidth - 420, this.animation.frameHeight - 250);
 };
@@ -232,8 +260,9 @@ Meteor_Slow.prototype.update = function() {
 		this.y -= this.game.clockTick * this.speed;
 	}
 	this.boundingbox = new BoundingBox(this.x + 10, this.y + 2, this.animation.frameWidth - 420, this.animation.frameHeight - 250);
-	if(this.hp === 0) {
+	if(this.hp === 0 && this.live) {
 		this.live = false;
+		asteroids_destroyed += 1;
 	}
 	Entity.prototype.update.call(this);
 };
@@ -241,8 +270,6 @@ Meteor_Slow.prototype.update = function() {
 Meteor_Slow.prototype.draw = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if (bound_box) {
-//      this.ctx.strokeStyle = "red";
-//      this.ctx.strokeRect(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
       this.ctx.strokeStyle = "yellow";
       this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
   }
@@ -261,13 +288,13 @@ function Meteor_Fast (game, spritesheet, pos) {
 	this.pos = pos;
 	if (pos === 0) {
 		this.animation = new Animation(spritesheet, 0, 2050, 970, 400, 1, 1, true, false);
-		Entity.call(this, game, -200, 440);
+		Entity.call(this, game, -200, 420);
 	} else if(pos === 1) {
 		this.animation = new Animation(spritesheet, 0, 2500, 400, 970, 1, 1, true, false);
 		Entity.call(this, game, 440, -200);
 	}else if(pos === 2) {
 		this.animation = new Animation(spritesheet, 0, 0, 970, 400, 1, 1, true, false);
-		Entity.call(this, game, 1000, 440);
+		Entity.call(this, game, 1000, 420);
 	}else if(pos === 3) {
 		this.animation = new Animation(spritesheet, 30, 1000, 400, 970, 1, 1, true, false);
 		Entity.call(this, game, 440, 1020);
@@ -293,8 +320,9 @@ Meteor_Fast.prototype.update = function() {
 		this.y -= this.game.clockTick * this.speed;
 		this.boundingbox = new BoundingBox(this.x + 10, this.y + 10, this.animation.frameWidth - 375, this.animation.frameHeight - 900);
 	}
-	if(this.hp === 0) {
+	if(this.hp === 0 && this.live) {
 		this.live = false;
+		asteroids_destroyed += 1;
 	}
 	Entity.prototype.update.call(this);
 };
@@ -302,8 +330,6 @@ Meteor_Fast.prototype.update = function() {
 Meteor_Fast.prototype.draw = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if (bound_box) {
-//      this.ctx.strokeStyle = "red";
-//      this.ctx.strokeRect(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
       this.ctx.strokeStyle = "yellow";
       this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
   }
@@ -322,13 +348,13 @@ function Meteor (game, spritesheet, pos) {
 	this.hp = 1;
 	this.pos = pos;
 	if (pos === 0) {
-		Entity.call(this, game, -200, 450);
+		Entity.call(this, game, -200, 425);
 	} else if(pos === 1) {
-		Entity.call(this, game, 450, -200);
+		Entity.call(this, game, 455, -200);
 	}else if(pos === 2) {
-		Entity.call(this, game, 1000, 450);
+		Entity.call(this, game, 1000, 425);
 	}else if(pos === 3) {
-		Entity.call(this, game, 450, 1020);
+		Entity.call(this, game, 455, 1020);
 	}
 	this.boundingbox = new BoundingBox(this.x, this.y , this.animation.frameWidth, this.animation.frameHeight);
 };
@@ -348,8 +374,9 @@ Meteor.prototype.update = function() {
 		this.y -= this.game.clockTick * this.speed;
 	}
 	this.boundingbox = new BoundingBox(this.x + 3, this.y + 10, this.animation.frameWidth - 110, this.animation.frameHeight - 170);
-	if(this.hp === 0) {
+	if(this.hp === 0 && this.live) {
 		this.live = false;
+		asteroids_destroyed += 1;
 	}
 	Entity.prototype.update.call(this);
 };
@@ -357,8 +384,6 @@ Meteor.prototype.update = function() {
 Meteor.prototype.draw = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
 	if (bound_box) {
-//      this.ctx.strokeStyle = "red";
-//      this.ctx.strokeRect(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
       this.ctx.strokeStyle = "yellow";
       this.ctx.strokeRect(this.boundingbox.x, this.boundingbox.y, this.boundingbox.width, this.boundingbox.height);
   }
@@ -374,6 +399,7 @@ function Asteroid_Spawner(game, spritesheet) {
 	this.game = game;
 	this.spritesheet = spritesheet;
 	this.counter = 0;
+	this.previous = -1;
 };
 
 Asteroid_Spawner.prototype = new Entity();
@@ -381,24 +407,19 @@ Asteroid_Spawner.prototype.constructor = Asteroid_Spawner;
 
 Asteroid_Spawner.prototype.update = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
-	if(this.counter % 100 === 0){
+	if(this.counter >= 60){
+		this.counter = 0;
 		var type = Math.floor(Math.random() * 100) + 1;
-//		  type %= 10;
-		  type = 9; //Testing individual obstacles
+		  type %= 10;
+//		  type = 8; //Testing individual obstacles
 		  var pos = Math.floor(Math.random() * 100) + 1;
 		  pos %= 4;
 //		  pos = 3; //Testing position
-//		  switch(type) {
-//		  case 0: //Meteor
-//		  		this.asteroids.push(new Meteor(this.game, this.spritesheet, pos));
-//		  		break;
-//		  case 1: //Meteor_Slow
-//		      	this.asteroids.push(new Meteor_Slow(this.game, this.spritesheet, pos));
-//		      	break;
-//		  case 2: //Meteor_Fast
-//			  	this.asteroids.push(new Meteor_Fast(this.game, this.spritesheet, pos));
-//			  	break;
-//		  }
+		  while (pos === this.previous) {
+			  var pos = Math.floor(Math.random() * 100) + 1;
+			  pos %= 4;
+		  }
+		  this.previous = pos;
 		  if(type < 8) {
 			  this.asteroids.push(new Meteor(this.game, this.spritesheet, pos));
 		  } else if(type >= 8 && type < 9) {
@@ -424,10 +445,22 @@ Asteroid_Spawner.prototype.draw = function () {
 
 // bullet
 function Bullet(game, spritesheet, ship) {
-    this.animation = new Animation(spritesheet, 0, 0, 155.75, 156, 0.05, 16, true, true);
-    this.x = ship.x + 20;
-    this.y = ship.y - 5;
-    this.speed = 4;
+    this.animation = new Animation(spritesheet, 0, 0, 300, 300, 1, 1, true, true);
+    this.pos = currentClosestPos;
+    if (this.pos === 0) {
+        this.x = 380;
+        this.y = 420;
+	} else if(this.pos === 1) {
+	    this.x = 435;
+	    this.y = 390;
+	}else if(this.pos === 2) {
+	    this.x = 490;
+	    this.y = 420;
+	}else if(this.pos === 3) {
+	    this.x = 435;
+	    this.y = 460;
+	}
+    this.speed = 100;
     this.game = game;
     this.live = true;
     this.ctx = game.ctx;
@@ -447,9 +480,19 @@ Bullet.prototype.draw = function () {
 
 Bullet.prototype.update = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
-	this.boundingbox = new BoundingBox(this.x, this.y + 4, this.animation.frameWidth - 130, this.animation.frameHeight - 80);
-	for (var i = 0; i < this.game.asteroid.length; i++) {
-		var ob = this.game.asteroid[i];
+    if (this.pos === 0) {
+    	this.x -= this.game.clockTick * this.speed;
+	} else if(this.pos === 1) {
+		this.y -= this.game.clockTick * this.speed;
+	}else if(this.pos === 2) {
+		this.x += this.game.clockTick * this.speed;
+	}else if(this.pos === 3) {
+		this.y += this.game.clockTick * this.speed;
+	}
+
+	this.boundingbox = new BoundingBox(this.x + 25, this.y + 15, this.animation.frameWidth - 287, this.animation.frameHeight - 290);
+	for (var i = 0; i < this.game.asteroids.length; i++) {
+		var ob = this.game.asteroids[i];
 		if(this.boundingbox.collide(ob.boundingbox) && this.live && ob.live) {
 			this.live = false;
 			ob.hp -= 1;
@@ -460,7 +503,7 @@ Bullet.prototype.update = function () {
 AM.queueDownload("./img/background.jpg");
 AM.queueDownload("./img/gameover.png");
 AM.queueDownload("./img/bullet.png");
-AM.queueDownload("./img/spaceship.png");
+AM.queueDownload("./img/ufo.png");
 AM.queueDownload("./img/meteors.png");
 
 
@@ -479,12 +522,12 @@ AM.downloadAll(function () {
 
     gameEngine.init(ctx);
     gameEngine.start();
-    var asteroidSpawner = new Asteroid_Spawner(gameEngine, AM.getAsset("./img/meteors.png"));
     gameEngine.addEntity(new Background(gameEngine, AM.getAsset("./img/background.jpg")));
+    var asteroidSpawner = new Asteroid_Spawner(gameEngine, AM.getAsset("./img/meteors.png"));
     gameEngine.addEntity(asteroidSpawner);
     gameEngine.asteroids = asteroidSpawner.asteroids;
-    gameEngine.addEntity(new Ship(gameEngine, AM.getAsset("./img/spaceship.png")));
-    gameEngine.addEntity(new Score(gameEngine, asteroids_destroyed, "white", 750, 950));
+    gameEngine.addEntity(new Ship(gameEngine, AM.getAsset("./img/ufo.png")));
+    gameEngine.addEntity(new Score(gameEngine, asteroids_destroyed, "white", 700, 950));
 
     console.log("All Done!");
 });
