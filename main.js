@@ -407,7 +407,7 @@ Asteroid_Spawner.prototype.constructor = Asteroid_Spawner;
 
 Asteroid_Spawner.prototype.update = function () {
 	if(!this.game.running || (!this.game.running && this.game.over)) return;
-	if(this.counter >= 80){
+	if(this.counter >= 70){
 		this.counter = 0;
 		var type = Math.floor(Math.random() * 100) + 1;
 		  type %= 40;
