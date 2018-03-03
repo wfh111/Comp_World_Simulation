@@ -420,11 +420,11 @@ Asteroid_Spawner.prototype.update = function () {
 			  pos %= 4;
 		  }
 		  this.previous = pos;
-		  if(type < 28) {
+		  if(type < 24) {
 			  this.asteroids.push(new Meteor(this.game, this.spritesheet, pos));
 		  } else if(type >= 35) {
 		      this.asteroids.push(new Meteor_Slow(this.game, this.spritesheet, pos));
-		  } else if(type >= 28 && type < 35) {
+		  } else if(type >= 24 && type < 35) {
 		  		this.asteroids.push(new Meteor_Fast(this.game, this.spritesheet, pos));
 		  }
 	}
