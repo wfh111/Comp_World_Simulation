@@ -79,7 +79,7 @@ socket.on("load", function (data) {
 		b.x = data.theBullets[i][0];
 		b.y = data.theBullets[i][1];
 		b.pos = data.theBullets[i][2];
-		bullets.push(b);
+		bullets.push([b.x, b.y, b.pos]);
 		gameEngine.addEntity(b);
 	}
 
@@ -260,7 +260,6 @@ Ship.prototype.update = function () {
     }
 	if(this.counter % 60 === 0) {
 		var b = new Bullet(gameEngine, AM.getAsset("./img/bullet.png"));
-		bullets.push(b);
 		gameEngine.addEntity(b);
 	}
 	this.boundingbox = new BoundingBox(this.x + 15, this.y + 15, this.animation.frameWidth - 315, this.animation.frameHeight - 215);
