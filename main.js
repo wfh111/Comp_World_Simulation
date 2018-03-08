@@ -73,10 +73,16 @@ socket.on("load", function (data) {
 //	asteroidSpawner = theAsteroids; 
 //	asteroids_destroyed = theScore;
 //	bullets = theBullets;
-//	for(i = 0; i < bullets.length; i++) {
-//		gameEngine.addEntity(bullets[i]);
-//	}
-	console.log(data.theShip);
+	bullets = [];
+	for(var i = 0; i < data.theBullets.length; i++) {
+		var b = new Bullet(gameEngine, AM.getAsset("./img/bullet.png"));
+		b.x = data.theBullets[i][0];
+		b.y = data.theBullets[i][1];
+		b.pos = data.theBullets[i][2];
+		bullets.push(b);
+		gameEngine.addEntity(b);
+	}
+
 });
 
 // no inheritance
@@ -253,8 +259,8 @@ Ship.prototype.update = function () {
     	}
     }
 	if(this.counter % 60 === 0) {
-		var b = new Bullet(gameEngine, AM.getAsset("./img/bullet.png"))
-		bullets.push(b)
+		var b = new Bullet(gameEngine, AM.getAsset("./img/bullet.png"));
+		bullets.push(b);
 		gameEngine.addEntity(b);
 	}
 	this.boundingbox = new BoundingBox(this.x + 15, this.y + 15, this.animation.frameWidth - 315, this.animation.frameHeight - 215);
@@ -266,7 +272,7 @@ Ship.prototype.update = function () {
 	this.counter += 1;
 	if(this.game.saveButton) {
 		console.log("The save key was pressed");
-		socket.emit("save", { studentname: "Walter Hanson", statename: "alpha", theShip: ship});
+		socket.emit("save", { studentname: "Walter Hanson", statename: "alpha", theBullets: bullets});
 	}
 	if(this.game.loadButton) {
 		console.log("The load key was pressed");
@@ -492,7 +498,7 @@ Asteroid_Spawner.prototype.draw = function () {
 };
 
 // bullet
-function Bullet(game, spritesheet, ship) {
+function Bullet(game, spritesheet) {
     this.animation = new Animation(spritesheet, 0, 0, 300, 300, 1, 1, true, true);
     this.pos = currentClosestPos;
     if (this.pos === 0) {
@@ -511,6 +517,7 @@ function Bullet(game, spritesheet, ship) {
     this.speed = 100;
     this.game = game;
     this.live = true;
+    bullets.push([this.x, this.y, this.pos]);
     this.ctx = game.ctx;
 	this.boundingbox = new BoundingBox(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
 }
