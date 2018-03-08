@@ -73,6 +73,9 @@ socket.on("load", function (theShip, theAsteroids, theScore, theBullets) {
 	asteroidSpawner = theAsteroids; 
 	asteroids_destroyed = theScore;
 	bullets = theBullets;
+	for(i = 0; i < bullets.length; i++) {
+		gameEngine.addEntity(bullets[i]);
+	}
 });
 
 // no inheritance
