@@ -68,14 +68,15 @@ Animation.prototype.currentFrame = function () {
 Animation.prototype.isDone = function () {
     return (this.elapsedTime >= this.totalTime);
 }
-socket.on("load", function (theShip, theAsteroids, theScore, theBullets) {
-	ship = theShip;
-	asteroidSpawner = theAsteroids; 
-	asteroids_destroyed = theScore;
-	bullets = theBullets;
-	for(i = 0; i < bullets.length; i++) {
-		gameEngine.addEntity(bullets[i]);
-	}
+socket.on("load", function (data) {
+//	ship = theShip;
+//	asteroidSpawner = theAsteroids; 
+//	asteroids_destroyed = theScore;
+//	bullets = theBullets;
+//	for(i = 0; i < bullets.length; i++) {
+//		gameEngine.addEntity(bullets[i]);
+//	}
+	console.log(data.theShip);
 });
 
 // no inheritance
@@ -264,10 +265,12 @@ Ship.prototype.update = function () {
 	Entity.prototype.update.call(this);
 	this.counter += 1;
 	if(this.game.saveButton) {
+		this.game.saveButton = false;
 		console.log("The save key was pressed");
-		socket.emit("save", { studentname: "Walter Hanson", statename: "alpha", theShip: ship, theAsteroids: asteroidSpawner, theScore: asteroids_destroyed, theBullets: bullets });
+		socket.emit("save", { studentname: "Walter Hanson", statename: "alpha", theShip: ship});
 	}
 	if(this.game.loadButton) {
+		this.game.loadButton = false;
 		console.log("The load key was pressed");
 		socket.emit("load", { studentname: "Walter Hanson", statename: "alpha" });
 	}
