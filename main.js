@@ -265,12 +265,10 @@ Ship.prototype.update = function () {
 	Entity.prototype.update.call(this);
 	this.counter += 1;
 	if(this.game.saveButton) {
-		this.game.saveButton = false;
 		console.log("The save key was pressed");
 		socket.emit("save", { studentname: "Walter Hanson", statename: "alpha", theShip: ship});
 	}
 	if(this.game.loadButton) {
-		this.game.loadButton = false;
 		console.log("The load key was pressed");
 		socket.emit("load", { studentname: "Walter Hanson", statename: "alpha" });
 	}
