@@ -1,3 +1,4 @@
+var socket = io.connect("http://24.16.255.56:8888");
 var AM = new AssetManager();
 var sheetHeight = 600;
 var gameScore = 0;
@@ -8,6 +9,10 @@ var asteroids_destroyed = 0;
 var currentClosestDist = 1000;
 var currentAsteroid = null;
 var currentClosestPos = 2;
+var bullets = [];
+var asteroidSpawner;
+var ship;
+
 
 
 function Animation(spriteSheet, startX, startY, frameWidth, frameHeight, frameDuration, frames, loop, reverse) {
@@ -63,6 +68,12 @@ Animation.prototype.currentFrame = function () {
 Animation.prototype.isDone = function () {
     return (this.elapsedTime >= this.totalTime);
 }
+socket.on("load", function (theShip, theAsteroids, theScore, theBullets) {
+	ship = theShip;
+	asteroidSpawner = theAsteroids; 
+	asteroids_destroyed = theScore;
+	bullets = theBullets;
+});
 
 // no inheritance
 function Background(game, spritesheet) {
@@ -125,6 +136,30 @@ Score.prototype.draw = function() {
 	this.ctx.fillText("ASTEROIDS DESTROYED: " + this.score, this.x, this.y);
 };
 
+function Info(game, color, x, y) {
+	this.color = color;
+	this.x = x;
+	this.y = y;
+	this.ctx = game.ctx;
+	this.ctx.font = "15px Arial";
+	this.ctx.fillStyle = color;
+	this.ctx.fillText("Press S to SAVE", this.x, this.y);
+	this.ctx.fillText("Press L to LOAD", this.x + 15, this.y + 15);
+	Entity.call(this, game, x, y);
+}
+
+//Score.prototype = new Entity();
+Info.prototype.constructor = Info;
+Info.prototype.update = function() {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	//Entity.prototype.update.call(this);
+};
+Info.prototype.draw = function() {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	this.ctx.fillText("Press S to SAVE", this.x, this.y);
+	this.ctx.fillText("Press L to LOAD", this.x, this.y + 15);
+};
+
 function gameOver(game, img, x, y) {
 	this.img = img;
 	this.x = x;
@@ -146,7 +181,6 @@ gameOver.prototype.update = function() {
 gameOver.prototype.draw = function(ctx) {
 	if(!this.game.running && !this.game.noSG) return;
 	if(!this.game.running && this.game.over) { //need variable for when pepsi man is caught
-		console.log("Inside gameover");
 		ctx.drawImage(this.img, this.x, this.y);
 		ctx.font = "15pt Arial";
 		ctx.fillStyle = "black";
@@ -215,7 +249,9 @@ Ship.prototype.update = function () {
     	}
     }
 	if(this.counter % 60 === 0) {
-		 gameEngine.addEntity(new Bullet(gameEngine, AM.getAsset("./img/bullet.png")));
+		var b = new Bullet(gameEngine, AM.getAsset("./img/bullet.png"))
+		bullets.push(b)
+		gameEngine.addEntity(b);
 	}
 	this.boundingbox = new BoundingBox(this.x + 15, this.y + 15, this.animation.frameWidth - 315, this.animation.frameHeight - 215);
 	if (!this.live) {
@@ -224,6 +260,14 @@ Ship.prototype.update = function () {
 	}
 	Entity.prototype.update.call(this);
 	this.counter += 1;
+	if(this.game.saveButton) {
+		console.log("The save key was pressed");
+		socket.emit("save", { studentname: "Walter Hanson", statename: "alpha", theShip: ship, theAsteroids: asteroidSpawner, theScore: asteroids_destroyed, theBullets: bullets });
+	}
+	if(this.game.loadButton) {
+		console.log("The load key was pressed");
+		socket.emit("load", { studentname: "Walter Hanson", statename: "alpha" });
+	}
 }
 
 function Meteor_Slow (game, spritesheet, pos) {
@@ -523,11 +567,13 @@ AM.downloadAll(function () {
     gameEngine.init(ctx);
     gameEngine.start();
     gameEngine.addEntity(new Background(gameEngine, AM.getAsset("./img/background.jpg")));
-    var asteroidSpawner = new Asteroid_Spawner(gameEngine, AM.getAsset("./img/meteors.png"));
+    asteroidSpawner = new Asteroid_Spawner(gameEngine, AM.getAsset("./img/meteors.png"));
     gameEngine.addEntity(asteroidSpawner);
     gameEngine.asteroids = asteroidSpawner.asteroids;
-    gameEngine.addEntity(new Ship(gameEngine, AM.getAsset("./img/ufo.png")));
+    ship = new Ship(gameEngine, AM.getAsset("./img/ufo.png"));
+    gameEngine.addEntity(ship);
     gameEngine.addEntity(new Score(gameEngine, asteroids_destroyed, "white", 700, 950));
+    gameEngine.addEntity(new Info(gameEngine, "white", 800, 20));
 
     console.log("All Done!");
 });

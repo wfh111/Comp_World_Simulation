@@ -40,21 +40,13 @@ GameEngine.prototype.startInput = function () {
 
     this.ctx.canvas.addEventListener("keydown", function (e) {
         //
-        if (e.keyCode == 39 || e.keyCode == 68) {
-          console.log("right");
-          that.rightButton = true;
+        if (e.keyCode == 115 || e.keyCode == 83) {
+          console.log("save");
+          that.saveButton = true;
         }
-        if (e.keyCode == 37 || e.keyCode == 65) {
-          console.log("left");
-          that.leftButton = true;
-        }
-        if (e.keyCode == 38 || e.keyCode == 87) {
-          console.log("up/shoot");
-          that.shootButton = true;
-        }
-        if (e.keyCode == 32) {
-          console.log("space/jump");
-          that.jumpButton = true;
+        if (e.keyCode == 108 || e.keyCode == 76) {
+          console.log("load");
+          that.loadButton = true;
         }
 
         //        console.log(e);
@@ -65,22 +57,15 @@ GameEngine.prototype.startInput = function () {
     this.ctx.canvas.addEventListener("keyup", function (e) {
         console.log(e);
 
-        if (e.keyCode == 39 || e.keyCode == 68) {
-          console.log("right");
-          that.rightButton = false;
+        if (e.keyCode == 83) {
+          console.log("save");
+          that.saveButton = false;
         }
-        if (e.keyCode == 37 || e.keyCode == 65) {
-          console.log("left");
-          that.leftButton = false;
+        if (e.keyCode == 76) {
+          console.log("load");
+          that.loadButton = false;
         }
-        if (e.keyCode == 38 || e.keyCode == 87) {
-          console.log("up");
-          that.shootButton = false;
-        }
-        if (e.keyCode == 32) {
-          console.log("space/jump");
-          that.jumpButton = false;
-        }
+
         console.log("Key Up Event - Char " + e.code + " Code " + e.keyCode);
     }, false);
 
@@ -132,14 +117,14 @@ GameEngine.prototype.startInput = function () {
     }, false);
 
     this.ctx.canvas.addEventListener("keypress", function (e) {
-        if (e.code === "KeyD") that.d = true;
+        if (e.code === "KeyS") that.s = true;
         that.chars[e.code] = true;
         console.log(e);
         console.log("Key Pressed Event - Char " + e.charCode + " Code " + e.keyCode);
     }, false);
 
     this.ctx.canvas.addEventListener("keypress", function (e) {
-        if (e.code === "ArrowLeft") that.Left = true;
+        if (e.code === "KeyL") that.l = true;
         that.chars[e.code] = true;
         console.log(e);
         console.log("ey bruv");
