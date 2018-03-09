@@ -9,7 +9,9 @@ var asteroids_destroyed = 0;
 var currentClosestDist = 1000;
 var currentAsteroid = null;
 var currentClosestPos = 2;
-var bullets = [];
+var bulletManager;
+var bulletData = [];
+var asteroidData = [];
 var asteroidSpawner;
 var ship;
 
@@ -69,20 +71,41 @@ Animation.prototype.isDone = function () {
     return (this.elapsedTime >= this.totalTime);
 }
 socket.on("load", function (data) {
-//	ship = theShip;
-//	asteroidSpawner = theAsteroids; 
-//	asteroids_destroyed = theScore;
-//	bullets = theBullets;
-	bullets = [];
+	bulletManager.bullets = [];
+	bulletData = [];
+	asteroidSpawner.asteroids = [];
+	asteroidData = [];
+	asteroids_destroyed = data.score;
+	gameScore = data.score;
+	currentAsteroid = null;
+	currentClosestDist = 1000;
 	for(var i = 0; i < data.theBullets.length; i++) {
 		var b = new Bullet(gameEngine, AM.getAsset("./img/bullet.png"));
 		b.x = data.theBullets[i][0];
 		b.y = data.theBullets[i][1];
 		b.pos = data.theBullets[i][2];
-		bullets.push([b.x, b.y, b.pos]);
-		gameEngine.addEntity(b);
+		bulletManager.bullets.push(b);
 	}
-
+	for(var i = 0; i < data.theAsteroids.length; i++) {
+		var asteroid = data.theAsteroids[i];
+		if(asteroid[4] === 0) {
+			var a = new Meteor_Slow(gameEngine, AM.getAsset("./img/meteors.png"), asteroid[2]);
+			a.x = asteroid[0];
+			a.y = asteroid[1];
+			a.hp = asteroid[3];
+		} else if(asteroid[4] === 1) {
+			var a = new Meteor_Fast(gameEngine, AM.getAsset("./img/meteors.png"), asteroid[2]);
+			a.x = asteroid[0];
+			a.y = asteroid[1];
+			a.hp = asteroid[3];
+		} else if(asteroid[4] === 2) {
+			var a = new Meteor(gameEngine, AM.getAsset("./img/meteors.png"), asteroid[2]);
+			a.x = asteroid[0];
+			a.y = asteroid[1];
+			a.hp = asteroid[3];
+		}
+		asteroidSpawner.asteroids.push(a);
+	}
 });
 
 // no inheritance
@@ -230,8 +253,8 @@ Ship.prototype.update = function () {
 	if(currentAsteroid != null && !currentAsteroid.live) {
 		currentClosestDist = 1000;
 	}
-    for (var i = 0; i < this.game.asteroids.length; i++) {
-    	var ob = this.game.asteroids[i];
+    for (var i = 0; i < asteroidSpawner.asteroids.length; i++) {
+		var ob = asteroidSpawner.asteroids[i];
     	if((ob instanceof Meteor || ob instanceof Meteor_Fast || ob instanceof Meteor_Slow) && this.boundingbox.collide(ob.boundingbox) && ob.live) {
     		this.live = false;
 		}
@@ -260,7 +283,7 @@ Ship.prototype.update = function () {
     }
 	if(this.counter % 60 === 0) {
 		var b = new Bullet(gameEngine, AM.getAsset("./img/bullet.png"));
-		gameEngine.addEntity(b);
+		bulletManager.bullets.push(b);
 	}
 	this.boundingbox = new BoundingBox(this.x + 15, this.y + 15, this.animation.frameWidth - 315, this.animation.frameHeight - 215);
 	if (!this.live) {
@@ -270,10 +293,24 @@ Ship.prototype.update = function () {
 	Entity.prototype.update.call(this);
 	this.counter += 1;
 	if(this.game.saveButton) {
+		this.game.saveButton = false;
+		for(var i = 0; i < bulletManager.bullets.length; i++) {
+			var bullet = bulletManager.bullets[i];
+			if(bullet.live) {
+				bulletData.push([bullet.x, bullet.y, bullet.pos]);
+			}
+		}
+		for(var i = 0; i < asteroidSpawner.asteroids.length; i++) {
+			var asteroid = asteroidSpawner.asteroids[i];
+			if(asteroid.live) {
+				asteroidData.push([asteroid.x, asteroid.y, asteroid.pos, asteroid.hp, asteroid.type])
+			}
+		}
 		console.log("The save key was pressed");
-		socket.emit("save", { studentname: "Walter Hanson", statename: "alpha", theBullets: bullets});
+		socket.emit("save", { studentname: "Walter Hanson", statename: "alpha", theBullets: bulletData, score: asteroids_destroyed, theAsteroids: asteroidData});
 	}
 	if(this.game.loadButton) {
+		this.game.loadButton = false;
 		console.log("The load key was pressed");
 		socket.emit("load", { studentname: "Walter Hanson", statename: "alpha" });
 	}
@@ -286,6 +323,7 @@ function Meteor_Slow (game, spritesheet, pos) {
 	this.live = true;
 	this.hp = 3;
 	this.pos = pos;
+	this.type = 0;
 	if (pos === 0) {
 		Entity.call(this, game, -200, 410);
 	} else if(pos === 1) {
@@ -313,7 +351,7 @@ Meteor_Slow.prototype.update = function() {
 		this.y -= this.game.clockTick * this.speed;
 	}
 	this.boundingbox = new BoundingBox(this.x + 10, this.y + 2, this.animation.frameWidth - 420, this.animation.frameHeight - 250);
-	if(this.hp === 0 && this.live) {
+	if(this.hp <= 0 && this.live) {
 		this.live = false;
 		asteroids_destroyed += 1;
 	}
@@ -339,6 +377,7 @@ function Meteor_Fast (game, spritesheet, pos) {
 	this.live = true;
 	this.hp = 1;
 	this.pos = pos;
+	this.type = 1;
 	if (pos === 0) {
 		this.animation = new Animation(spritesheet, 0, 2050, 970, 400, 1, 1, true, false);
 		Entity.call(this, game, -200, 420);
@@ -373,7 +412,7 @@ Meteor_Fast.prototype.update = function() {
 		this.y -= this.game.clockTick * this.speed;
 		this.boundingbox = new BoundingBox(this.x + 10, this.y + 10, this.animation.frameWidth - 375, this.animation.frameHeight - 900);
 	}
-	if(this.hp === 0 && this.live) {
+	if(this.hp <= 0 && this.live) {
 		this.live = false;
 		asteroids_destroyed += 1;
 	}
@@ -400,6 +439,7 @@ function Meteor (game, spritesheet, pos) {
 	this.live = true;
 	this.hp = 1;
 	this.pos = pos;
+	this.type = 2;
 	if (pos === 0) {
 		Entity.call(this, game, -200, 425);
 	} else if(pos === 1) {
@@ -427,7 +467,7 @@ Meteor.prototype.update = function() {
 		this.y -= this.game.clockTick * this.speed;
 	}
 	this.boundingbox = new BoundingBox(this.x + 3, this.y + 10, this.animation.frameWidth - 110, this.animation.frameHeight - 170);
-	if(this.hp === 0 && this.live) {
+	if(this.hp <= 0 && this.live) {
 		this.live = false;
 		asteroids_destroyed += 1;
 	}
@@ -516,7 +556,6 @@ function Bullet(game, spritesheet) {
     this.speed = 100;
     this.game = game;
     this.live = true;
-    bullets.push([this.x, this.y, this.pos]);
     this.ctx = game.ctx;
 	this.boundingbox = new BoundingBox(this.x, this.y, this.animation.frameWidth, this.animation.frameHeight);
 }
@@ -545,12 +584,36 @@ Bullet.prototype.update = function () {
 	}
 
 	this.boundingbox = new BoundingBox(this.x + 25, this.y + 15, this.animation.frameWidth - 287, this.animation.frameHeight - 290);
-	for (var i = 0; i < this.game.asteroids.length; i++) {
-		var ob = this.game.asteroids[i];
+	for (var i = 0; i < asteroidSpawner.asteroids.length; i++) {
+		var ob = asteroidSpawner.asteroids[i];
 		if(this.boundingbox.collide(ob.boundingbox) && this.live && ob.live) {
 			this.live = false;
 			ob.hp -= 1;
 		}
+	}
+}
+
+function Bullet_Manager(game) {
+	this.bullets = [];
+	this.game = game;
+}
+
+Bullet_Manager.prototype = new Entity();
+Bullet_Manager.prototype.constructor = Bullet_Manager;
+
+Bullet_Manager.prototype.draw = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	var numBullets = this.bullets.length;
+	for(i = 0; i < numBullets; i++) {
+		this.bullets[i].draw();
+	}
+}
+
+Bullet_Manager.prototype.update = function () {
+	if(!this.game.running || (!this.game.running && this.game.over)) return;
+	var numBullets = this.bullets.length;
+	for(i = 0; i < numBullets; i++) {
+		this.bullets[i].update();
 	}
 }
 
@@ -582,6 +645,8 @@ AM.downloadAll(function () {
     gameEngine.asteroids = asteroidSpawner.asteroids;
     ship = new Ship(gameEngine, AM.getAsset("./img/ufo.png"));
     gameEngine.addEntity(ship);
+    bulletManager = new Bullet_Manager(gameEngine);
+    gameEngine.addEntity(bulletManager);
     gameEngine.addEntity(new Score(gameEngine, asteroids_destroyed, "white", 700, 950));
     gameEngine.addEntity(new Info(gameEngine, "white", 800, 20));
 
